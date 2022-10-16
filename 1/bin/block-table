@@ -1,0 +1,130 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use locale;
+
+use Unicode::UCD qw(charinfo charblock charblocks);
+use HTML::Entities qw();
+use POSIX qw(floor);
+use List::Util qw(min max);
+
+use JSON;
+our $json = JSON->new()->pretty(1)->canonical(1)->ascii(1);
+
+if (scalar @ARGV) {
+    if ($ARGV[0] eq 'range' && $ARGV[1] =~ m{^U\+[0-9A-Fa-f]+$} && $ARGV[2] =~ m{^U\+[0-9A-Fa-f]+$}) {
+        my $low = codepoint($ARGV[1]);
+        my $high = codepoint($ARGV[2]);
+        printRangeOfBlock($low, $high);
+    } else {
+        foreach my $arg (@ARGV) {
+            printBlock($arg);
+        }
+    }
+} else {
+    printMostBlocks();
+}
+
+sub printRangeOfBlock {
+    my ($low, $high) = @_;
+    printMostBlocks($low, $high);
+}
+
+sub printMostBlocks {
+    my ($low, $high) = @_;
+    my $charblocks = charblocks();
+    my @blocks;
+    foreach my $blockName (keys %$charblocks) {
+        my @ranges = @{$charblocks->{$blockName}};
+        my @rangeStarts = map { $_->[0] } @ranges;
+        my $start = min(@rangeStarts);
+        push(@blocks, [$start, $blockName]);
+    }
+    @blocks = sort { $a->[0] <=> $b->[0] } @blocks;
+    my @blockNames = map { $_->[1] } @blocks;
+    foreach my $blockName (@blockNames) {
+        my $ranges = charblock($blockName);
+        my @ranges = @$ranges;
+        my $rangeMin = min(map { $_->[0] } @ranges);
+        my $rangeMax = max(map { $_->[1] } @ranges);
+        if (defined $low) {
+            next if $rangeMax < $low;
+        }
+        if (defined $high) {
+            next if $rangeMin > $high;
+        }
+        next if $blockName eq 'CJK Unified Ideographs Extension A';
+        next if $blockName eq 'CJK Unified Ideographs';
+        next if $blockName eq 'Yi Syllables';
+        next if $blockName eq 'Yi Radicals';
+        next if $blockName eq 'Hangul Syllables';
+        next if $blockName eq 'High Surrogates';
+        next if $blockName eq 'High Private Use Surrogates';
+        next if $blockName eq 'Low Surrogates';
+        next if $blockName eq 'Private Use Area';
+        next if $blockName eq 'Tangut';
+        next if $blockName eq 'Tangut Components';
+        next if $blockName eq 'Tangut Supplement';
+        next if $blockName eq 'Variation Selectors';
+        next if $blockName eq 'Variation Selectors Supplement';
+        next if $blockName =~ m{^CJK Unified Ideographs Extension [B-G]$};
+        next if $blockName =~ m{^Supplementary Private Use Area-[AB]$};
+        printBlock($blockName);
+    }
+}
+
+sub printBlock {
+    my ($arg) = @_;
+    my $block = charblock($arg);
+    if (!defined $block) {
+        warn("$arg: no such block\n");
+        return;
+    }
+    if (ref $block eq '') {
+        $block = charblock($block);
+    }
+    my $blockName = charblock($block->[0]->[0]);
+    printf STDERR ("\r\e[K%s ...", $blockName) if !-t 1 && -t 2;
+    printf("<h2>%s</h2>\n", EE($blockName));
+    print("<table class=\"unicode-table\">\n");
+    print("<tbody>\n");
+    foreach my $range (@$block) {
+        my ($low, $high) = @$range;
+        my $count = $high - $low + 1;
+        $low = floor($low / 16) * 16;
+        $high = floor($high / 16) * 16 + 15;
+        my $lowRow = floor($low / 16);
+        my $highRow = floor($high / 16);
+        for (my $row = $lowRow; $row <= $highRow; $row += 1) {
+            print("<tr>");
+            printf("<th scope=\"row\">%s</th>\n", sprintf("U+%04X", $row * 16));
+            for (my $codepoint = $row * 16; $codepoint <= $row * 16 + 15; $codepoint += 1) {
+                my $charinfo = charinfo($codepoint);
+                if (!defined $charinfo) {
+                    print("<td></td>\n");
+                    next;
+                }
+                my $uhex = sprintf("U+%04X", $codepoint);
+                my $title = sprintf("%s %s", $uhex, $charinfo->{name});
+                # printf("<td title=\"%s\">", EE($title));
+                print("<td>");
+                printf("%s", EE(chr($codepoint)));
+                print("</td>\n");
+            }
+            print("</tr>\n");
+        }
+    }
+    print STDERR ("\r\e[K", $blockName) if !-t 1 && -t 2;
+    print("</tbody>\n");
+    print("</table>\n");
+}
+
+sub EE { goto &HTML::Entities::encode_entities; }
+
+sub codepoint {
+    my ($arg) = @_;
+    if ($arg =~ m{^U\+(?<hex>[0-9A-Fa-f]+)$}) {
+        return hex($+{hex});
+    }
+    return $arg;
+}

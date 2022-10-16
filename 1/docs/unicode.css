@@ -1,0 +1,34 @@
+@import url(normalize.css);
+html {
+  background-color: #222;
+  color: #eee; }
+
+.unicode-table {
+  width: 100%;
+  table-layout: fixed;
+  border: none;
+  border-top: 1px solid #eee;
+  border-left: 1px solid #eee;
+  border-collapse: collapse;
+  border-spacing: 0; }
+  .unicode-table > tbody > tr > th {
+    text-align: right;
+    font-size: 2vw;
+    width: 5em;
+    font-family: "Courier New", monospace; }
+  .unicode-table > tbody > tr > td {
+    text-align: center;
+    width: 6.25%;
+    font-size: 2.5vw; }
+  .unicode-table > * > * > th, .unicode-table > * > * > td {
+    border-bottom: 1px solid #eee;
+    border-right: 1px solid #eee; }
+  .unicode-table > * > * > td:nth-child(6),
+  .unicode-table > * > * > td:nth-child(7),
+  .unicode-table > * > * > td:nth-child(8),
+  .unicode-table > * > * > td:nth-child(9),
+  .unicode-table > * > * > td:nth-child(14),
+  .unicode-table > * > * > td:nth-child(15),
+  .unicode-table > * > * > td:nth-child(16),
+  .unicode-table > * > * > td:nth-child(17) {
+    background-color: #333; }

@@ -1,0 +1,38 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use locale;
+
+use Unicode::UCD qw(charblocks);
+use HTML::Entities qw();
+use POSIX qw(floor);
+use List::Util qw(min);
+
+use JSON;
+our $json = JSON->new()->pretty(1)->canonical(1)->ascii(1);
+
+my $charblocks = charblocks();
+
+my @blocks;
+foreach my $blockName (keys %$charblocks) {
+    my @ranges = @{$charblocks->{$blockName}};
+    my @rangeStarts = map { $_->[0] } @ranges;
+    my $start = min(@rangeStarts);
+    push(@blocks, [$start, $blockName]);
+}
+
+@blocks = sort { $a->[0] <=> $b->[0] } @blocks;
+my @blockNames = map { $_->[1] } @blocks;
+
+foreach my $blockName (@blockNames) {
+    my @ranges = @{$charblocks->{$blockName}};
+    my $firstLine = 1;
+    foreach my $range (@ranges) {
+        my $uhexLow  = sprintf("U+%04X", $range->[0]);
+        my $uhexHigh = sprintf("U+%04X", $range->[1]);
+        my $count = $range->[1] - $range->[0] + 1;
+        printf("%-10s  %-10s  %-10d  %s\n",
+               $uhexLow, $uhexHigh, $count, $firstLine ? $blockName : '"');
+        $firstLine = 0;
+    }
+}

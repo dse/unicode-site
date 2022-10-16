@@ -1,0 +1,44 @@
+@import "normalize.css";
+html {
+    background-color: #222;
+    color: #eee;
+}
+.container {
+    // max-width: 800px;
+    // margin-left: auto;
+    // margin-right: auto;
+}
+.unicode-table {
+    width: 100%;
+    table-layout: fixed;
+    border: none;
+    border-top: 1px solid #eee;
+    border-left: 1px solid #eee;
+    border-collapse: collapse;
+    border-spacing: 0;
+    > tbody > tr > th {
+        text-align: right;
+        font-size: 2vw;
+        width: 5em;
+        font-family: "Courier New", monospace;
+    }
+    > tbody > tr > td {
+        text-align: center;
+        width: 6.25%;
+        font-size: 2.5vw;
+    }
+    > * > * > th, > * > * > td {
+        border-bottom: 1px solid #eee;
+        border-right: 1px solid #eee;
+    }
+    > * > * > td:nth-child(6),
+    > * > * > td:nth-child(7),
+    > * > * > td:nth-child(8),
+    > * > * > td:nth-child(9),
+    > * > * > td:nth-child(14),
+    > * > * > td:nth-child(15),
+    > * > * > td:nth-child(16),
+    > * > * > td:nth-child(17) {
+        background-color: #333;
+    }
+}
